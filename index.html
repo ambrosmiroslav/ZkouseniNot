@@ -346,6 +346,9 @@
           <button id="confirmBtn" class="button primary">Potvrdit volbu</button>
         </div>
         <div id="result" class="result"></div>
+        <div id="returnRow" class="tool-row hidden">
+          <button id="returnBtn" class="button secondary">Zpět na nastavení</button>
+        </div>
       </section>
     </div>
 
@@ -362,6 +365,7 @@
       let questionQueue = [];
       let totalQuestions = 0;
       let score = 0;
+      let wrongAnswers = 0;
       let nextQuestionTimeout = null;
       let answerLocked = false;
 
@@ -668,6 +672,7 @@
           score += 1;
           setResult('Správně!', 'success');
         } else {
+          wrongAnswers += 1;
           setResult(`Špatně. Správná odpověď: ${formatNoteLabel(currentQuiz.note)}`, 'error');
           questionQueue.push(currentQuiz);
         }
@@ -725,6 +730,7 @@
           score += 1;
           setResult('Správně umístěná nota.', 'success');
         } else {
+          wrongAnswers += 1;
           setResult(`Špatně. Správná pozice: ${target}.`, 'error');
           questionQueue.push(currentQuiz);
         }
@@ -747,11 +753,15 @@
         currentQuiz = null;
         answerLocked = false;
         score = 0;
-        document.getElementById('quiz').classList.add('visible');
+        wrongAnswers = 0;
         if (!totalQuestions) {
+          document.getElementById('quiz').classList.add('visible');
           setResult('Vyber alespoň jeden klíč a jednu oktávu.', 'error');
           return;
         }
+        document.getElementById('setup').classList.add('hidden');
+        document.getElementById('quiz').classList.add('visible');
+        document.getElementById('returnRow').classList.add('hidden');
         setResult('', '');
         askNextQuestion();
       }
@@ -766,8 +776,9 @@
           document.getElementById('staffArea').innerHTML = '';
           document.getElementById('keyboard').innerHTML = '';
           document.getElementById('controls').classList.add('hidden');
+          document.getElementById('returnRow').classList.remove('hidden');
           updateStatus(0);
-          setResult(`Všechny noty jsou správně zodpovězeny. Získal jsi ${finalScore} z ${totalQuestions} bodů v režimu ${mode}.`, 'success');
+          setResult(`Všechny noty jsou správně zodpovězeny. Zodpovězené noty: ${finalScore} z ${totalQuestions}. Chybné odpovědi: ${wrongAnswers}. Režim ${mode}.`, 'success');
           return;
         }
 
@@ -777,7 +788,20 @@
         renderQuestion();
       }
 
+      function returnToSetup() {
+        window.clearTimeout(nextQuestionTimeout);
+        nextQuestionTimeout = null;
+        currentQuiz = null;
+        questionQueue = [];
+        answerLocked = false;
+        document.getElementById('quiz').classList.remove('visible');
+        document.getElementById('setup').classList.remove('hidden');
+        document.getElementById('returnRow').classList.add('hidden');
+        setResult('', '');
+      }
+
       document.getElementById('startBtn').addEventListener('click', startQuiz);
+      document.getElementById('returnBtn').addEventListener('click', returnToSetup);
       document.getElementById('upBtn').addEventListener('click', () => movePlacement(1));
       document.getElementById('downBtn').addEventListener('click', () => movePlacement(-1));
       document.getElementById('confirmBtn').addEventListener('click', confirmPlacement);
