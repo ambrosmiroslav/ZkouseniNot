@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notová zkouška</title>
+    <style>
+      :root {
+        --bg: #f4f2ec;
+        --panel: #fffdf9;
+        --ink: #1d2430;
+        --muted: #5d6876;
+        --accent: #7c5cff;
+        --accent-dark: #4f38c5;
+        --success: #1f9d69;
+        --danger: #c93b3b;
+        --line: #1d2430;
+        --gold: #f5b63e;
+        --shadow: rgba(26, 30, 41, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        background: linear-gradient(180deg, #f9f6f1 0%, #f1efe9 100%);
+        color: var(--ink);
+      }
+
+      .app {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 18px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 3rem);
+      }
+
+      .badge {
+        background: #efe9ff;
+        border: 1px solid #cbbdff;
+        color: var(--accent-dark);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-weight: 700;
+        font-size: 0.82rem;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid rgba(29, 36, 48, 0.08);
+        box-shadow: 0 10px 30px var(--shadow);
+        border-radius: 20px;
+        padding: 22px;
+      }
+
+      .settings {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+      }
+
+      fieldset {
+        margin: 0;
+        padding: 16px 18px 14px;
+        border: 1px solid rgba(29, 36, 48, 0.12);
+        border-radius: 16px;
+        background: #fff;
+      }
+
+      legend {
+        font-weight: 700;
+        padding: 0 8px;
+        color: var(--ink);
+      }
+
+      .check-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .checkbox-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border: 1px solid rgba(29, 36, 48, 0.18);
+        border-radius: 999px;
+        background: #faf9f6;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .checkbox-pill input {
+        accent-color: var(--accent);
+      }
+
+      .tool-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 20px;
+        justify-content: flex-end;
+      }
+
+      .button, button {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 18px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .button:hover, button:hover {
+        transform: translateY(-1px);
+      }
+
+      .primary {
+        background: linear-gradient(135deg, var(--accent) 0%, #8d5ef5 100%);
+        color: white;
+        box-shadow: 0 8px 18px rgba(124, 92, 255, 0.22);
+      }
+
+      .secondary {
+        background: #f2f1f9;
+        color: var(--ink);
+      }
+
+      .danger {
+        background: #fce4e4;
+        color: var(--danger);
+      }
+
+      .quiz-shell {
+        display: none;
+        margin-top: 22px;
+      }
+
+      .quiz-shell.visible {
+        display: block;
+      }
+
+      .statusbar {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 18px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .task-box {
+        min-height: 120px;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        margin-bottom: 18px;
+        background: linear-gradient(135deg, #f8f7fb 0%, #f3f0ff 100%);
+        border-radius: 18px;
+        border: 1px solid rgba(124, 92, 255, 0.12);
+        padding: 12px;
+      }
+
+      .task-note-name {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        letter-spacing: 0.06em;
+      }
+
+      .staff-wrap {
+        width: min(100%, 900px);
+        margin: 0 auto;
+      }
+
+      .staff {
+        width: 100%;
+        height: 220px;
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid rgba(29, 36, 48, 0.1);
+      }
+
+      .note-head {
+        fill: var(--ink);
+        stroke: var(--ink);
+        stroke-width: 1.5;
+      }
+
+      .note-stem {
+        stroke: var(--ink);
+        stroke-width: 2;
+      }
+
+      .keyboard {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 20px;
+      }
+
+      .key-btn {
+        min-width: 56px;
+        padding: 12px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(29, 36, 48, 0.15);
+        background: #fff;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .key-btn.correct {
+        background: rgba(31, 157, 105, 0.12);
+        border-color: rgba(31, 157, 105, 0.45);
+        color: var(--success);
+      }
+
+      .key-btn.wrong {
+        background: rgba(201, 59, 59, 0.12);
+        border-color: rgba(201, 59, 59, 0.4);
+        color: var(--danger);
+      }
+
+      .move-control {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+      }
+
+      .move-btn {
+        min-width: 110px;
+        background: #f3f3fb;
+        border: 1px solid rgba(29, 36, 48, 0.12);
+        color: var(--ink);
+      }
+
+      .result {
+        margin-top: 18px;
+        min-height: 30px;
+        font-weight: 700;
+        font-size: 1.08rem;
+      }
+
+      .result.success { color: var(--success); }
+      .result.error { color: var(--danger); }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 640px) {
+        .header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .tool-row {
+          justify-content: stretch;
+        }
+
+        .tool-row > * {
+          flex: 1 1 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <h1>Notová zkouška</h1>
+        <div class="badge">Statická webová aplikace</div>
+      </header>
+
+      <section id="setup" class="panel">
+        <div class="settings">
+          <fieldset>
+            <legend>Režim</legend>
+            <div class="check-grid">
+              <label class="checkbox-pill"><input type="radio" name="mode" value="choice" checked /> Výběr správné noty</label>
+              <label class="checkbox-pill"><input type="radio" name="mode" value="place" /> Umístění noty na osnově</label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Klíč</legend>
+            <div class="check-grid">
+              <label class="checkbox-pill"><input type="checkbox" name="clef" value="treble" checked /> Houslový</label>
+              <label class="checkbox-pill"><input type="checkbox" name="clef" value="bass" /> Basový</label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Oktávy</legend>
+            <div class="check-grid">
+              <label class="checkbox-pill"><input type="checkbox" name="octave" value="nula" checked /> Nulačárková</label>
+              <label class="checkbox-pill"><input type="checkbox" name="octave" value="jedna" checked /> Jednočárková</label>
+              <label class="checkbox-pill"><input type="checkbox" name="octave" value="dve" checked /> Dvoučárková</label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Akordy / křížky a béčka</legend>
+            <div class="check-grid">
+              <label class="checkbox-pill"><input type="checkbox" id="accidentals" checked /> Povolena křížka a béčka</label>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="tool-row">
+          <button id="startBtn" class="button primary">Spustit zkoušení</button>
+        </div>
+      </section>
+
+      <section id="quiz" class="panel quiz-shell" aria-live="polite">
+        <div class="statusbar">
+          <div id="progress">Otázka: 0/0</div>
+          <div id="score">Skóre: 0</div>
+        </div>
+
+        <div id="taskBox" class="task-box"></div>
+        <div id="staffArea" class="staff-wrap"></div>
+        <div id="keyboard" class="keyboard" aria-label="Virtuální klávesnice"></div>
+        <div id="controls" class="move-control hidden">
+          <button id="upBtn" class="button move-btn">Nahoru</button>
+          <button id="downBtn" class="button move-btn">Dolů</button>
+          <button id="confirmBtn" class="button primary">Potvrdit volbu</button>
+        </div>
+        <div id="result" class="result"></div>
+        <div class="tool-row">
+          <button id="nextBtn" class="button secondary">Další otázka</button>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'];
+      const OCTAVE_MAP = {
+        nula: 3,
+        jedna: 4,
+        dve: 5
+      };
+      const NOTE_ORDER = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+
+      let currentQuiz = null;
+      let questionIndex = 0;
+      let score = 0;
+      const totalQuestions = 8;
+
+      function getSelectedValues(name) {
+        return [...document.querySelectorAll(`input[name="${name}"]`)]
+          .filter((input) => input.checked)
+          .map((input) => input.value);
+      }
+
+      function normalizeNote(raw) {
+        if (!raw) return null;
+        const cleaned = String(raw).trim();
+        if (!/^([A-H])([#b]?)(\d)$/.test(cleaned)) {
+          return null;
+        }
+        return cleaned;
+      }
+
+      function formatNoteLabel(raw) {
+        const note = normalizeNote(raw);
+        if (!note) return raw;
+        const match = note.match(/^([A-H])([#b]?)(\d)$/);
+        if (!match) return raw;
+        const [, letter, accidental, octave] = match;
+        const octaveNumber = Number(octave);
+        const base = `${letter === 'H' ? 'H' : letter}${accidental}`;
+
+        if (octaveNumber <= 3) return base;
+        if (octaveNumber === 4) return `${base}'`;
+        if (octaveNumber === 5) return `${base}''`;
+        if (octaveNumber === 6) return `${base}'''`;
+        return `${base}${"'".repeat(Math.max(0, octaveNumber - 3))}`;
+      }
+
+      function getAvailableNotePool(selectedOctaves, includeAccidentals) {
+        const selectedNumbers = selectedOctaves
+          .map((octaveKey) => OCTAVE_MAP[octaveKey])
+          .filter((value) => value !== undefined)
+          .sort((a, b) => a - b);
+
+        if (!selectedNumbers.length) {
+          return [];
+        }
+
+        const minOctave = selectedNumbers[0];
+        const maxOctave = selectedNumbers[selectedNumbers.length - 1];
+        const notes = [];
+        const names = includeAccidentals ? ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'] : ['C', 'D', 'E', 'F', 'G', 'A', 'H'];
+
+        for (let octave = minOctave; octave <= maxOctave; octave += 1) {
+          names.forEach((name) => {
+            notes.push(`${name}${octave}`);
+          });
+        }
+
+        return notes;
+      }
+
+      function staffPosition(noteName, clef) {
+        const note = normalizeNote(noteName);
+        if (!note) return 0;
+        const match = note.match(/^([A-H])([#b]?)(\d)$/);
+        if (!match) return 0;
+
+        const [, letterOriginal, accidental, octaveText] = match;
+        const letter = letterOriginal === 'H' ? 'B' : letterOriginal;
+        const octave = Number(octaveText);
+        const index = NOTE_ORDER.indexOf(letter);
+        if (index === -1) return 0;
+
+        const base = clef === 'treble'
+          ? ((octave - 4) * 7) + index - 2
+          : ((octave - 2) * 7) + index - 4;
+
+        if (accidental === '#') return base + 0.25;
+        if (accidental === 'b') return base - 0.25;
+        return base;
+      }
+
+      function pickQuestion() {
+        const clefs = getSelectedValues('clef');
+        const octaves = getSelectedValues('octave');
+        const includeAccidentals = document.getElementById('accidentals').checked;
+        if (!clefs.length || !octaves.length) {
+          return null;
+        }
+
+        const clef = clefs[Math.floor(Math.random() * clefs.length)];
+        const pool = getAvailableNotePool(octaves, includeAccidentals);
+        const note = pool[Math.floor(Math.random() * pool.length)];
+        return {
+          clef,
+          note,
+          label: formatNoteLabel(note),
+          position: staffPosition(note, clef)
+        };
+      }
+
+      function setResult(message, type) {
+        const result = document.getElementById('result');
+        result.textContent = message;
+        result.className = `result ${type || ''}`.trim();
+      }
+
+      function drawLedgerLines(svg, position) {
+        svg.querySelectorAll('[data-ledger="true"]').forEach((line) => line.remove());
+
+        const ledgerPositions = [];
+
+        // Staff line spacing is 2 position steps in this coordinate system:
+        // odd positions are spaces, even positions are actual lines.
+        // We only draw helper lines on actual line positions, otherwise they appear twice too dense.
+        if (position <= -1) {
+          for (let p = -2; p >= position; p -= 2) {
+            ledgerPositions.push(p);
+          }
+        }
+        if (position >= 9) {
+          for (let p = 10; p <= position; p += 2) {
+            ledgerPositions.push(p);
+          }
+        }
+
+        ledgerPositions.forEach((p) => {
+          const ledgerY = 120 - p * 10;
+          const ledger = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          ledger.setAttribute('x1', '120');
+          ledger.setAttribute('x2', '500');
+          ledger.setAttribute('y1', String(ledgerY));
+          ledger.setAttribute('y2', String(ledgerY));
+          ledger.setAttribute('stroke', '#1d2430');
+          ledger.setAttribute('stroke-width', '2');
+          ledger.setAttribute('data-ledger', 'true');
+          svg.appendChild(ledger);
+        });
+      }
+
+      function drawStaff(clef, activePosition, showNote, labelText) {
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const wrap = document.getElementById('staffArea');
+        wrap.innerHTML = '';
+
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 760 220');
+        svg.setAttribute('class', 'staff');
+
+        for (let i = 0; i < 5; i += 1) {
+          const y = 40 + i * 20;
+          const line = document.createElementNS(svgNS, 'line');
+          line.setAttribute('x1', '20');
+          line.setAttribute('x2', '740');
+          line.setAttribute('y1', String(y));
+          line.setAttribute('y2', String(y));
+          line.setAttribute('stroke', '#1d2430');
+          line.setAttribute('stroke-width', '2');
+          svg.appendChild(line);
+        }
+
+        const clefGlyph = document.createElementNS(svgNS, 'text');
+        clefGlyph.setAttribute('x', '42');
+        clefGlyph.setAttribute('y', '120');
+        clefGlyph.setAttribute('font-size', clef === 'treble' ? '90' : '72');
+        clefGlyph.setAttribute('font-family', 'Georgia, serif');
+        clefGlyph.setAttribute('fill', '#1d2430');
+        clefGlyph.textContent = clef === 'treble' ? '𝄞' : '𝄢';
+        svg.appendChild(clefGlyph);
+
+        drawLedgerLines(svg, activePosition);
+        const noteY = 120 - activePosition * 10;
+
+        if (showNote) {
+          const group = document.createElementNS(svgNS, 'g');
+          group.setAttribute('data-current-note', 'true');
+          group.setAttribute('data-position', String(activePosition));
+
+          const ellipse = document.createElementNS(svgNS, 'ellipse');
+          ellipse.setAttribute('cx', '460');
+          ellipse.setAttribute('cy', String(noteY));
+          ellipse.setAttribute('rx', '18');
+          ellipse.setAttribute('ry', '12');
+          ellipse.setAttribute('class', 'note-head');
+
+          const stem = document.createElementNS(svgNS, 'line');
+          stem.setAttribute('x1', '478');
+          stem.setAttribute('x2', '478');
+          stem.setAttribute('y1', String(noteY));
+          stem.setAttribute('y2', String(noteY - 38));
+          stem.setAttribute('class', 'note-stem');
+
+          group.appendChild(ellipse);
+          group.appendChild(stem);
+          svg.appendChild(group);
+        }
+
+        if (labelText) {
+          const label = document.createElementNS(svgNS, 'text');
+          label.setAttribute('x', '520');
+          label.setAttribute('y', String(noteY - 6));
+          label.setAttribute('font-size', '28');
+          label.setAttribute('font-family', 'Segoe UI, sans-serif');
+          label.setAttribute('font-weight', '700');
+          label.setAttribute('fill', '#1d2430');
+          label.textContent = labelText;
+          svg.appendChild(label);
+        }
+
+        wrap.appendChild(svg);
+      }
+
+      function buildKeyboard(selectedOctaves, includeAccidentals) {
+        const keyboard = document.getElementById('keyboard');
+        keyboard.innerHTML = '';
+
+        const notes = getAvailableNotePool(selectedOctaves, includeAccidentals);
+        notes.forEach((note) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'key-btn';
+          button.textContent = formatNoteLabel(note);
+          button.dataset.note = note;
+          button.addEventListener('click', () => handleChoice(note));
+          keyboard.appendChild(button);
+        });
+      }
+
+      function renderQuestion() {
+        const question = currentQuiz;
+        if (!question) return;
+
+        const taskBox = document.getElementById('taskBox');
+        const keyboard = document.getElementById('keyboard');
+        const controls = document.getElementById('controls');
+        const selectedMode = document.querySelector('input[name="mode"]:checked').value;
+
+        document.getElementById('progress').textContent = `Otázka: ${questionIndex}/${totalQuestions}`;
+        document.getElementById('score').textContent = `Skóre: ${score}`;
+
+        if (selectedMode === 'choice') {
+          taskBox.innerHTML = '<div class="task-note-name">Vyber správnou notu</div>';
+          keyboard.classList.remove('hidden');
+          controls.classList.add('hidden');
+          drawStaff(question.clef, question.position, true, '');
+          buildKeyboard(getSelectedValues('octave'), document.getElementById('accidentals').checked);
+          setResult('', '');
+          return;
+        }
+
+        taskBox.innerHTML = `<div class="task-note-name">${question.label}</div>`;
+        keyboard.classList.add('hidden');
+        controls.classList.remove('hidden');
+        drawStaff(question.clef, 0, false, '');
+        addPlacementMarker();
+        setResult('', '');
+      }
+
+      function addPlacementMarker() {
+        const svg = document.querySelector('#staffArea svg');
+        if (!svg) return;
+
+        drawLedgerLines(svg, 0);
+
+        const noteY = 120;
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('data-current-note', 'true');
+        group.setAttribute('data-position', '0');
+
+        const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+        ellipse.setAttribute('cx', '460');
+        ellipse.setAttribute('cy', String(noteY));
+        ellipse.setAttribute('rx', '18');
+        ellipse.setAttribute('ry', '12');
+        ellipse.setAttribute('class', 'note-head');
+
+        const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        stem.setAttribute('x1', '478');
+        stem.setAttribute('x2', '478');
+        stem.setAttribute('y1', String(noteY));
+        stem.setAttribute('y2', String(noteY - 38));
+        stem.setAttribute('class', 'note-stem');
+
+        group.appendChild(ellipse);
+        group.appendChild(stem);
+        svg.appendChild(group);
+      }
+
+      function handleChoice(note) {
+        if (!currentQuiz) return;
+        const correct = note === currentQuiz.note;
+
+        [...document.querySelectorAll('.key-btn')].forEach((button) => {
+          const value = button.dataset.note;
+          if (value === currentQuiz.note) {
+            button.classList.add('correct');
+          } else if (value === note) {
+            button.classList.add('wrong');
+          }
+        });
+
+        if (correct) {
+          score += 1;
+          setResult('Správně!', 'success');
+        } else {
+          setResult(`Špatně. Správná odpověď: ${formatNoteLabel(currentQuiz.note)}`, 'error');
+        }
+
+        document.getElementById('nextBtn').disabled = false;
+      }
+
+      function movePlacement(step) {
+        const note = document.querySelector('#staffArea [data-current-note="true"]');
+        if (!note) return;
+
+        const current = Number(note.dataset.position || '0');
+        const next = Math.max(-6, Math.min(18, current + step));
+        const svg = document.querySelector('#staffArea svg');
+        note.dataset.position = String(next);
+        const y = 120 - next * 10;
+
+        const ellipse = note.querySelector('ellipse');
+        const stem = note.querySelector('line');
+        ellipse.setAttribute('cy', String(y));
+        stem.setAttribute('y1', String(y));
+        stem.setAttribute('y2', String(y - 38));
+        drawLedgerLines(svg, next);
+      }
+
+      function confirmPlacement() {
+        const note = document.querySelector('#staffArea [data-current-note="true"]');
+        if (!note) return;
+
+        const placed = Number(note.dataset.position || '0');
+        const target = Math.round(currentQuiz.position);
+        if (placed === target) {
+          score += 1;
+          setResult('Správně umístěná nota.', 'success');
+        } else {
+          setResult(`Špatně. Správná pozice: ${target}.`, 'error');
+        }
+        document.getElementById('nextBtn').disabled = false;
+      }
+
+      function updateStatus() {
+        document.getElementById('progress').textContent = `Otázka: ${questionIndex}/${totalQuestions}`;
+        document.getElementById('score').textContent = `Skóre: ${score}`;
+      }
+
+      function startQuiz() {
+        questionIndex = 0;
+        score = 0;
+        setResult('', '');
+        document.getElementById('quiz').classList.add('visible');
+        askNextQuestion();
+      }
+
+      function askNextQuestion() {
+        if (questionIndex >= totalQuestions) {
+          const finalScore = score;
+          const mode = document.querySelector('input[name="mode"]:checked').value === 'choice' ? 'výběr' : 'umístění';
+          document.getElementById('taskBox').innerHTML = '<div class="task-note-name">Konec zkoušení</div>';
+          document.getElementById('staffArea').innerHTML = '';
+          document.getElementById('keyboard').innerHTML = '';
+          document.getElementById('controls').classList.add('hidden');
+          setResult(`Získal jsi ${finalScore} z ${totalQuestions} bodů v režimu ${mode}.`, 'success');
+          document.getElementById('nextBtn').disabled = true;
+          return;
+        }
+
+        const selected = pickQuestion();
+        if (!selected) {
+          setResult('Vyber alespoň jeden klíč a jednu oktávu.', 'error');
+          return;
+        }
+
+        currentQuiz = selected;
+        questionIndex += 1;
+        updateStatus();
+        renderQuestion();
+        document.getElementById('nextBtn').disabled = true;
+      }
+
+      document.getElementById('startBtn').addEventListener('click', startQuiz);
+      document.getElementById('nextBtn').addEventListener('click', askNextQuestion);
+      document.getElementById('upBtn').addEventListener('click', () => movePlacement(1));
+      document.getElementById('downBtn').addEventListener('click', () => movePlacement(-1));
+      document.getElementById('confirmBtn').addEventListener('click', confirmPlacement);
+
+      document.querySelectorAll('input[name="mode"]').forEach((input) => {
+        input.addEventListener('change', () => {
+          if (document.getElementById('quiz').classList.contains('visible')) {
+            askNextQuestion();
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
