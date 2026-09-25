@@ -346,9 +346,6 @@
           <button id="confirmBtn" class="button primary">Potvrdit volbu</button>
         </div>
         <div id="result" class="result"></div>
-        <div class="tool-row">
-          <button id="nextBtn" class="button secondary">Další otázka</button>
-        </div>
       </section>
     </div>
 
@@ -362,9 +359,11 @@
       const NOTE_ORDER = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
       let currentQuiz = null;
-      let questionIndex = 0;
+      let questionQueue = [];
+      let totalQuestions = 0;
       let score = 0;
-      const totalQuestions = 8;
+      let nextQuestionTimeout = null;
+      let answerLocked = false;
 
       function getSelectedValues(name) {
         return [...document.querySelectorAll(`input[name="${name}"]`)]
@@ -407,18 +406,17 @@
           return [];
         }
 
-        const minOctave = selectedNumbers[0];
-        const maxOctave = selectedNumbers[selectedNumbers.length - 1];
         const notes = [];
-        const names = includeAccidentals ? ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'] : ['C', 'D', 'E', 'F', 'G', 'A', 'H'];
+        const names = includeAccidentals ? NOTE_NAMES : ['C', 'D', 'E', 'F', 'G', 'A', 'H'];
 
-        for (let octave = minOctave; octave <= maxOctave; octave += 1) {
+        for (const octave of selectedNumbers) {
           names.forEach((name) => {
             notes.push(`${name}${octave}`);
           });
+          notes.push(`C${octave + 1}`);
         }
 
-        return notes;
+        return [...new Set(notes)];
       }
 
       function staffPosition(noteName, clef) {
@@ -442,23 +440,25 @@
         return base;
       }
 
-      function pickQuestion() {
+      function createQuestionQueue() {
         const clefs = getSelectedValues('clef');
         const octaves = getSelectedValues('octave');
         const includeAccidentals = document.getElementById('accidentals').checked;
-        if (!clefs.length || !octaves.length) {
-          return null;
-        }
+        if (!clefs.length || !octaves.length) return [];
 
-        const clef = clefs[Math.floor(Math.random() * clefs.length)];
-        const pool = getAvailableNotePool(octaves, includeAccidentals);
-        const note = pool[Math.floor(Math.random() * pool.length)];
-        return {
+        const notes = getAvailableNotePool(octaves, includeAccidentals);
+        const questions = clefs.flatMap((clef) => notes.map((note) => ({
           clef,
           note,
           label: formatNoteLabel(note),
           position: staffPosition(note, clef)
-        };
+        })));
+
+        for (let i = questions.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [questions[i], questions[j]] = [questions[j], questions[i]];
+        }
+        return questions;
       }
 
       function setResult(message, type) {
@@ -489,8 +489,8 @@
         ledgerPositions.forEach((p) => {
           const ledgerY = 120 - p * 10;
           const ledger = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-          ledger.setAttribute('x1', '120');
-          ledger.setAttribute('x2', '500');
+          ledger.setAttribute('x1', '372');
+          ledger.setAttribute('x2', '468');
           ledger.setAttribute('y1', String(ledgerY));
           ledger.setAttribute('y2', String(ledgerY));
           ledger.setAttribute('stroke', '#1d2430');
@@ -512,8 +512,8 @@
         for (let i = 0; i < 5; i += 1) {
           const y = 40 + i * 20;
           const line = document.createElementNS(svgNS, 'line');
-          line.setAttribute('x1', '20');
-          line.setAttribute('x2', '740');
+          line.setAttribute('x1', '310');
+          line.setAttribute('x2', '490');
           line.setAttribute('y1', String(y));
           line.setAttribute('y2', String(y));
           line.setAttribute('stroke', '#1d2430');
@@ -522,7 +522,7 @@
         }
 
         const clefGlyph = document.createElementNS(svgNS, 'text');
-        clefGlyph.setAttribute('x', '42');
+        clefGlyph.setAttribute('x', '310');
         clefGlyph.setAttribute('y', '120');
         clefGlyph.setAttribute('font-size', clef === 'treble' ? '90' : '72');
         clefGlyph.setAttribute('font-family', 'Georgia, serif');
@@ -539,15 +539,15 @@
           group.setAttribute('data-position', String(activePosition));
 
           const ellipse = document.createElementNS(svgNS, 'ellipse');
-          ellipse.setAttribute('cx', '460');
+          ellipse.setAttribute('cx', '420');
           ellipse.setAttribute('cy', String(noteY));
           ellipse.setAttribute('rx', '18');
           ellipse.setAttribute('ry', '12');
           ellipse.setAttribute('class', 'note-head');
 
           const stem = document.createElementNS(svgNS, 'line');
-          stem.setAttribute('x1', '478');
-          stem.setAttribute('x2', '478');
+          stem.setAttribute('x1', '438');
+          stem.setAttribute('x2', '438');
           stem.setAttribute('y1', String(noteY));
           stem.setAttribute('y2', String(noteY - 38));
           stem.setAttribute('class', 'note-stem');
@@ -559,7 +559,7 @@
 
         if (labelText) {
           const label = document.createElementNS(svgNS, 'text');
-          label.setAttribute('x', '520');
+          label.setAttribute('x', '480');
           label.setAttribute('y', String(noteY - 6));
           label.setAttribute('font-size', '28');
           label.setAttribute('font-family', 'Segoe UI, sans-serif');
@@ -597,8 +597,10 @@
         const controls = document.getElementById('controls');
         const selectedMode = document.querySelector('input[name="mode"]:checked').value;
 
-        document.getElementById('progress').textContent = `Otázka: ${questionIndex}/${totalQuestions}`;
-        document.getElementById('score').textContent = `Skóre: ${score}`;
+        controls.querySelectorAll('button').forEach((button) => {
+          button.disabled = false;
+        });
+        updateStatus();
 
         if (selectedMode === 'choice') {
           taskBox.innerHTML = '<div class="task-note-name">Vyber správnou notu</div>';
@@ -630,15 +632,15 @@
         group.setAttribute('data-position', '0');
 
         const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-        ellipse.setAttribute('cx', '460');
+        ellipse.setAttribute('cx', '420');
         ellipse.setAttribute('cy', String(noteY));
         ellipse.setAttribute('rx', '18');
         ellipse.setAttribute('ry', '12');
         ellipse.setAttribute('class', 'note-head');
 
         const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        stem.setAttribute('x1', '478');
-        stem.setAttribute('x2', '478');
+        stem.setAttribute('x1', '438');
+        stem.setAttribute('x2', '438');
         stem.setAttribute('y1', String(noteY));
         stem.setAttribute('y2', String(noteY - 38));
         stem.setAttribute('class', 'note-stem');
@@ -649,7 +651,8 @@
       }
 
       function handleChoice(note) {
-        if (!currentQuiz) return;
+        if (!currentQuiz || answerLocked) return;
+        answerLocked = true;
         const correct = note === currentQuiz.note;
 
         [...document.querySelectorAll('.key-btn')].forEach((button) => {
@@ -666,12 +669,33 @@
           setResult('Správně!', 'success');
         } else {
           setResult(`Špatně. Správná odpověď: ${formatNoteLabel(currentQuiz.note)}`, 'error');
+          questionQueue.push(currentQuiz);
         }
+        currentQuiz = null;
+        updateStatus(questionQueue.length);
+        disableAnswerControls();
+        scheduleNextQuestion();
+      }
 
-        document.getElementById('nextBtn').disabled = false;
+      function disableAnswerControls() {
+        document.getElementById('keyboard').querySelectorAll('button').forEach((button) => {
+          button.disabled = true;
+        });
+        document.getElementById('controls').querySelectorAll('button').forEach((button) => {
+          button.disabled = true;
+        });
+      }
+
+      function scheduleNextQuestion() {
+        window.clearTimeout(nextQuestionTimeout);
+        nextQuestionTimeout = window.setTimeout(() => {
+          nextQuestionTimeout = null;
+          askNextQuestion();
+        }, 800);
       }
 
       function movePlacement(step) {
+        if (answerLocked) return;
         const note = document.querySelector('#staffArea [data-current-note="true"]');
         if (!note) return;
 
@@ -690,9 +714,11 @@
       }
 
       function confirmPlacement() {
+        if (!currentQuiz || answerLocked) return;
         const note = document.querySelector('#staffArea [data-current-note="true"]');
         if (!note) return;
 
+        answerLocked = true;
         const placed = Number(note.dataset.position || '0');
         const target = Math.round(currentQuiz.position);
         if (placed === target) {
@@ -700,51 +726,58 @@
           setResult('Správně umístěná nota.', 'success');
         } else {
           setResult(`Špatně. Správná pozice: ${target}.`, 'error');
+          questionQueue.push(currentQuiz);
         }
-        document.getElementById('nextBtn').disabled = false;
+        currentQuiz = null;
+        updateStatus(questionQueue.length);
+        disableAnswerControls();
+        scheduleNextQuestion();
       }
 
-      function updateStatus() {
-        document.getElementById('progress').textContent = `Otázka: ${questionIndex}/${totalQuestions}`;
-        document.getElementById('score').textContent = `Skóre: ${score}`;
+      function updateStatus(remaining = questionQueue.length + (currentQuiz ? 1 : 0)) {
+        document.getElementById('progress').textContent = `Zbývá: ${remaining}`;
+        document.getElementById('score').textContent = `Správně: ${score}/${totalQuestions}`;
       }
 
       function startQuiz() {
-        questionIndex = 0;
+        window.clearTimeout(nextQuestionTimeout);
+        nextQuestionTimeout = null;
+        questionQueue = createQuestionQueue();
+        totalQuestions = questionQueue.length;
+        currentQuiz = null;
+        answerLocked = false;
         score = 0;
-        setResult('', '');
         document.getElementById('quiz').classList.add('visible');
+        if (!totalQuestions) {
+          setResult('Vyber alespoň jeden klíč a jednu oktávu.', 'error');
+          return;
+        }
+        setResult('', '');
         askNextQuestion();
       }
 
       function askNextQuestion() {
-        if (questionIndex >= totalQuestions) {
+        window.clearTimeout(nextQuestionTimeout);
+        nextQuestionTimeout = null;
+        if (!questionQueue.length) {
           const finalScore = score;
           const mode = document.querySelector('input[name="mode"]:checked').value === 'choice' ? 'výběr' : 'umístění';
           document.getElementById('taskBox').innerHTML = '<div class="task-note-name">Konec zkoušení</div>';
           document.getElementById('staffArea').innerHTML = '';
           document.getElementById('keyboard').innerHTML = '';
           document.getElementById('controls').classList.add('hidden');
-          setResult(`Získal jsi ${finalScore} z ${totalQuestions} bodů v režimu ${mode}.`, 'success');
-          document.getElementById('nextBtn').disabled = true;
+          updateStatus(0);
+          setResult(`Všechny noty jsou správně zodpovězeny. Získal jsi ${finalScore} z ${totalQuestions} bodů v režimu ${mode}.`, 'success');
           return;
         }
 
-        const selected = pickQuestion();
-        if (!selected) {
-          setResult('Vyber alespoň jeden klíč a jednu oktávu.', 'error');
-          return;
-        }
-
-        currentQuiz = selected;
-        questionIndex += 1;
+        currentQuiz = questionQueue.shift();
+        answerLocked = false;
         updateStatus();
         renderQuestion();
-        document.getElementById('nextBtn').disabled = true;
       }
 
       document.getElementById('startBtn').addEventListener('click', startQuiz);
-      document.getElementById('nextBtn').addEventListener('click', askNextQuestion);
       document.getElementById('upBtn').addEventListener('click', () => movePlacement(1));
       document.getElementById('downBtn').addEventListener('click', () => movePlacement(-1));
       document.getElementById('confirmBtn').addEventListener('click', confirmPlacement);
@@ -752,7 +785,11 @@
       document.querySelectorAll('input[name="mode"]').forEach((input) => {
         input.addEventListener('change', () => {
           if (document.getElementById('quiz').classList.contains('visible')) {
-            askNextQuestion();
+            if (currentQuiz) {
+              renderQuestion();
+            } else {
+              askNextQuestion();
+            }
           }
         });
       });
