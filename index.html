@@ -31,30 +31,20 @@
       .app {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 32px 20px 48px;
+        padding: 20px 20px 36px;
       }
 
       .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
+        margin-bottom: 16px;
         gap: 18px;
       }
 
       h1 {
         margin: 0;
-        font-size: clamp(2rem, 4vw, 3rem);
-      }
-
-      .badge {
-        background: #efe9ff;
-        border: 1px solid #cbbdff;
-        color: var(--accent-dark);
-        border-radius: 999px;
-        padding: 8px 12px;
-        font-weight: 700;
-        font-size: 0.82rem;
+        font-size: clamp(1.5rem, 3vw, 2.2rem);
       }
 
       .panel {
@@ -166,19 +156,19 @@
       }
 
       .task-box {
-        min-height: 120px;
+        min-height: 72px;
         display: grid;
         place-items: center;
         text-align: center;
-        margin-bottom: 18px;
+        margin-bottom: 10px;
         background: linear-gradient(135deg, #f8f7fb 0%, #f3f0ff 100%);
         border-radius: 18px;
         border: 1px solid rgba(124, 92, 255, 0.12);
-        padding: 12px;
+        padding: 8px;
       }
 
       .task-note-name {
-        font-size: clamp(2rem, 4vw, 3rem);
+        font-size: clamp(1.5rem, 3vw, 2.2rem);
         font-weight: 800;
         letter-spacing: 0.06em;
       }
@@ -205,6 +195,15 @@
       .note-stem {
         stroke: var(--ink);
         stroke-width: 2;
+      }
+
+      .note-head.correct-position {
+        fill: var(--success);
+        stroke: var(--success);
+      }
+
+      .note-stem.correct-position {
+        stroke: var(--success);
       }
 
       .keyboard {
@@ -288,7 +287,6 @@
     <div class="app">
       <header class="header">
         <h1>Notová zkouška</h1>
-        <div class="badge">Statická webová aplikace</div>
       </header>
 
       <section id="setup" class="panel">
@@ -472,8 +470,10 @@
         result.className = `result ${type || ''}`.trim();
       }
 
-      function drawLedgerLines(svg, position) {
-        svg.querySelectorAll('[data-ledger="true"]').forEach((line) => line.remove());
+      function drawLedgerLines(svg, position, clearExisting = true) {
+        if (clearExisting) {
+          svg.querySelectorAll('[data-ledger="true"]').forEach((line) => line.remove());
+        }
 
         const ledgerPositions = [];
 
@@ -655,6 +655,34 @@
         svg.appendChild(group);
       }
 
+      function addCorrectPlacementMarker(position) {
+        const svg = document.querySelector('#staffArea svg');
+        if (!svg) return;
+
+        drawLedgerLines(svg, position, false);
+        const noteY = 120 - position * 10;
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('data-correct-note', 'true');
+
+        const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+        ellipse.setAttribute('cx', '420');
+        ellipse.setAttribute('cy', String(noteY));
+        ellipse.setAttribute('rx', '18');
+        ellipse.setAttribute('ry', '12');
+        ellipse.setAttribute('class', 'note-head correct-position');
+
+        const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        stem.setAttribute('x1', '438');
+        stem.setAttribute('x2', '438');
+        stem.setAttribute('y1', String(noteY));
+        stem.setAttribute('y2', String(noteY - 38));
+        stem.setAttribute('class', 'note-stem correct-position');
+
+        group.appendChild(ellipse);
+        group.appendChild(stem);
+        svg.appendChild(group);
+      }
+
       function handleChoice(note) {
         if (!currentQuiz || answerLocked) return;
         answerLocked = true;
@@ -733,6 +761,7 @@
         } else {
           wrongAnswers += 1;
           setResult(`Špatně. Správná pozice: ${target}.`, 'error');
+          addCorrectPlacementMarker(target);
           questionQueue.push(currentQuiz);
         }
         currentQuiz = null;
