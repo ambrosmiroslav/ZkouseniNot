@@ -305,7 +305,7 @@
             <legend>Klíč</legend>
             <div class="check-grid">
               <label class="checkbox-pill"><input type="checkbox" name="clef" value="treble" checked /> Houslový</label>
-              <label class="checkbox-pill"><input type="checkbox" name="clef" value="bass" /> Basový</label>
+              <label class="checkbox-pill"><input type="checkbox" name="clef" value="bass" disabled /> Basový</label>
             </div>
           </fieldset>
 
@@ -321,7 +321,7 @@
           <fieldset>
             <legend>Akordy / křížky a béčka</legend>
             <div class="check-grid">
-              <label class="checkbox-pill"><input type="checkbox" id="accidentals" checked /> Povolena křížka a béčka</label>
+              <label class="checkbox-pill"><input type="checkbox" id="accidentals" checked disabled /> Povolena křížka a béčka</label>
             </div>
           </fieldset>
         </div>
@@ -346,7 +346,8 @@
           <button id="confirmBtn" class="button primary">Potvrdit volbu</button>
         </div>
         <div id="result" class="result"></div>
-        <div id="returnRow" class="tool-row hidden">
+        <div id="testControls" class="tool-row">
+          <button id="exitBtn" class="button secondary">Ukončit test a zpět na nastavení</button>
           <button id="returnBtn" class="button secondary">Zpět na nastavení</button>
         </div>
       </section>
@@ -761,7 +762,8 @@
         }
         document.getElementById('setup').classList.add('hidden');
         document.getElementById('quiz').classList.add('visible');
-        document.getElementById('returnRow').classList.add('hidden');
+        document.getElementById('exitBtn').classList.remove('hidden');
+        document.getElementById('returnBtn').classList.add('hidden');
         setResult('', '');
         askNextQuestion();
       }
@@ -776,7 +778,8 @@
           document.getElementById('staffArea').innerHTML = '';
           document.getElementById('keyboard').innerHTML = '';
           document.getElementById('controls').classList.add('hidden');
-          document.getElementById('returnRow').classList.remove('hidden');
+          document.getElementById('exitBtn').classList.add('hidden');
+          document.getElementById('returnBtn').classList.remove('hidden');
           updateStatus(0);
           setResult(`Všechny noty jsou správně zodpovězeny. Zodpovězené noty: ${finalScore} z ${totalQuestions}. Chybné odpovědi: ${wrongAnswers}. Režim ${mode}.`, 'success');
           return;
@@ -796,15 +799,34 @@
         answerLocked = false;
         document.getElementById('quiz').classList.remove('visible');
         document.getElementById('setup').classList.remove('hidden');
-        document.getElementById('returnRow').classList.add('hidden');
+        document.getElementById('exitBtn').classList.remove('hidden');
+        document.getElementById('returnBtn').classList.add('hidden');
         setResult('', '');
       }
 
       document.getElementById('startBtn').addEventListener('click', startQuiz);
+      document.getElementById('exitBtn').addEventListener('click', returnToSetup);
       document.getElementById('returnBtn').addEventListener('click', returnToSetup);
       document.getElementById('upBtn').addEventListener('click', () => movePlacement(1));
       document.getElementById('downBtn').addEventListener('click', () => movePlacement(-1));
       document.getElementById('confirmBtn').addEventListener('click', confirmPlacement);
+
+      document.addEventListener('keydown', (event) => {
+        const placeMode = document.querySelector('input[name="mode"]:checked')?.value === 'place';
+        const quizActive = document.getElementById('quiz').classList.contains('visible');
+        if (!placeMode || !quizActive || !currentQuiz || answerLocked) return;
+
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          movePlacement(1);
+        } else if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          movePlacement(-1);
+        } else if (event.key === 'Enter') {
+          event.preventDefault();
+          confirmPlacement();
+        }
+      });
 
       document.querySelectorAll('input[name="mode"]').forEach((input) => {
         input.addEventListener('change', () => {
