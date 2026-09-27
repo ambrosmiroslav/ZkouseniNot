@@ -98,6 +98,18 @@
         accent-color: var(--accent);
       }
 
+      .checkbox-pill.unavailable {
+        color: #8a8a8a;
+        border-color: #d1d5db;
+        background: #f1f1f1;
+        cursor: not-allowed;
+      }
+
+      .checkbox-pill.unavailable input {
+        accent-color: #9ca3af;
+        cursor: not-allowed;
+      }
+
       .tool-row {
         display: flex;
         flex-wrap: wrap;
@@ -303,7 +315,7 @@
             <legend>Klíč</legend>
             <div class="check-grid">
               <label class="checkbox-pill"><input type="checkbox" name="clef" value="treble" checked /> Houslový</label>
-              <label class="checkbox-pill"><input type="checkbox" name="clef" value="bass" disabled /> Basový</label>
+              <label class="checkbox-pill unavailable"><input type="checkbox" name="clef" value="bass" disabled /> Basový</label>
             </div>
           </fieldset>
 
@@ -319,7 +331,7 @@
           <fieldset>
             <legend>Akordy / křížky a béčka</legend>
             <div class="check-grid">
-              <label class="checkbox-pill"><input type="checkbox" id="accidentals" checked disabled /> Povolena křížka a béčka</label>
+              <label class="checkbox-pill unavailable"><input type="checkbox" id="accidentals" disabled /> Povolena křížka a béčka</label>
             </div>
           </fieldset>
         </div>
